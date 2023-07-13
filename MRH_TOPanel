@@ -1,0 +1,35 @@
+//@version=5
+//Built by @maxheltzel6
+indicator(title="Max's TO Pannel", shorttitle="MRH_TOPANEL", overlay=false)
+
+ma(source, length, type) =>
+    switch type
+        "SMA" => ta.sma(source, length)
+        "Bollinger Bands" => ta.sma(source, length)
+        "EMA" => ta.ema(source, length)
+        "SMMA (RMA)" => ta.rma(source, length)
+        "WMA" => ta.wma(source, length)
+        "VWMA" => ta.vwma(source, length)
+
+rsiLengthInput = input.int(14, minval=1, title="RSI Length", group="RSI Settings")
+rsiSourceInput = input.source(close, "Source", group="RSI Settings")
+maTypeInput = input.string("SMA", title="MA Type", options=["SMA", "Bollinger Bands", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group="MA Settings")
+maLengthInput = input.int(9, title="MA Length", group="MA Settings")
+bbMultInput = input.float(2.0, minval=0.001, maxval=50, title="BB StdDev", group="MA Settings")
+
+up = ta.rma(math.max(ta.change(rsiSourceInput), 0), rsiLengthInput)
+down = ta.rma(-math.min(ta.change(rsiSourceInput), 0), rsiLengthInput)
+rsi = down == 0 ? -100 : up == 0 ? 0 : 50 - (100 / (1 + up / down))
+rsiMA = ma(rsi, maLengthInput, maTypeInput)
+
+hist = rsi - rsiMA
+hline(0, "Zero Line", color=color.new(#787B86, 50))
+
+// Adjusting the vertical position of the lines and scaling
+offset = input.int(0, title="Vertical Offset", minval=0)
+scaled_rsi = rsi * 2 + offset
+scaled_rsiMA = rsiMA * 2 + offset
+
+plot(hist, title="Histogram", style=plot.style_columns, color=(hist >= 0 ? (hist[1] < hist ? #2bff00 : #76ff82) : (hist[1] < hist ? #ff707f : #ff0000)))
+plot(scaled_rsi, title="RSI", color=color.rgb(255, 255, 255), linewidth=2)
+plot(scaled_rsiMA, title="Signal", color=color.rgb(0, 140, 255), linewidth=2)
